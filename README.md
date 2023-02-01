@@ -9,6 +9,8 @@
    - mTLS
 
  How To Use
+   - Install Istio 
+     - https://istio.io/latest/docs/setup/getting-started/#download
    - For example canary 
      - kubectl apply -f deployment-ab.yaml 
      - kubectl apply -f gateway.yaml 
