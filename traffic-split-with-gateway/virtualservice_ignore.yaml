@@ -1,0 +1,65 @@
+#lets do traffic split , 20% to version 2 , 80% version 1
+
+# This virtual service controll inside service mesh if any pod access through the ucp-svc
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: vs-splitter-seceda-ucp-microsvc
+spec:
+  hosts:
+    - ucp-svc # Kubernetes service , indicates If any request coming for this ucp-svc , apply the folowing rule.
+  http:
+  - name: virtual-service-routes
+    route: 
+    - destination: 
+        host: ucp-svc # Send here 
+        subset: ucp-service-subset 
+      weight: 50
+    - destination: 
+        host: ucp2-svc # Send here 
+        subset: ucp2-service-subset 
+      weight: 50
+---
+
+#Destination rule.
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata: 
+  name: istio-destination-rule1
+spec: 
+  host: ucp-svc # Just copy the host part from Virtual service and further define the traffic rule.
+  subsets: 
+  - name: ucp-service-subset   
+    labels: # Used for selecting the pods
+      app: myapp-ucp # use same existing  feature pods 
+      version: v1
+      example: traffic-management
+    trafficPolicy: 
+      loadBalancer: 
+        simple: ROUND_ROBIN
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata: 
+  name: istio-destination-rule2
+spec: 
+  host: ucp2-svc # Just copy the host part from Virtual service and further define the traffic rule.
+  subsets: 
+  - name: ucp2-service-subset   
+    labels: # Used for selecting the pods
+      app: myapp-ucp2 # use new feature pods 
+      version: v1
+      example: traffic-management
+    trafficPolicy: 
+      loadBalancer: 
+        simple: ROUND_ROBIN
+      
+
+
+  
+
+
+
+
+

@@ -1,0 +1,101 @@
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: my-istio-gw-obj
+spec:
+  selector:
+    istio: ingressgateway # Use the in-buil ingres gateway pod 
+    app: istio-ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http   
+      protocol: HTTP # or TCP
+    hosts:
+    - "*"    ## Make it from any host , apply the assoicated virtualservice to all incoming traffic from this specified hosts
+    #- "ucp.devinfradevauth.com" 
+
+
+# This virtual service only applied to gateway for incoming traffic from outside.
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: vs-ingress-traffic-splitter
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - my-istio-gw-obj
+  http:
+  - match:
+    - uri:
+        prefix: /index/
+    rewrite:
+      uri: "/"  
+    name: vs-ingress-traffic-splitter-policy1    
+    route: 
+    - destination: 
+        host: ucp-svc # Send here 
+        subset: ucp-service-subset-ingress
+      weight: 80
+    - destination: 
+        host: ucp2-svc # Send here 
+        subset: ucp2-service-subset-ingress
+      weight: 20 
+
+  - name: vs-ingress-traffic-splitter-policy2    # Traffic distribution using 
+    route: 
+    - destination: 
+        host: ucp-svc # Send here 
+        subset: ucp-service-subset-ingress
+      weight: 0
+    - destination: 
+        host: ucp2-svc # Send here 
+        subset: ucp2-service-subset-ingress
+      weight: 100
+---
+#Destination rule.
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata: 
+  name: istio-destination-rule1-ingress
+spec: 
+  host: ucp-svc # Just copy the host part from Virtual service and further define the traffic rule.
+  subsets: 
+  - name: ucp-service-subset-ingress   
+    labels: # Used for selecting the pods
+      app: myapp-ucp # use same existing  feature pods 
+      version: v1
+      example: traffic-management
+    trafficPolicy: 
+      loadBalancer: 
+        simple: ROUND_ROBIN
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata: 
+  name: istio-destination-rule2-ingress
+spec: 
+  host: ucp2-svc # Just copy the host part from Virtual service and further define the traffic rule.
+  subsets: 
+  - name: ucp2-service-subset-ingress
+    labels: # Used for selecting the pods
+      app: myapp-ucp2 # use new feature pods 
+      version: v1
+      example: traffic-management
+    trafficPolicy: 
+      loadBalancer: 
+        simple: ROUND_ROBIN
+
+
+  
+
+
+
+
+
+
+
+

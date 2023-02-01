@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ucp-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: myapp-ucp
+      version: v1
+      example: traffic-management
+  template:
+    metadata:
+      labels:
+        app: myapp-ucp
+        version: v1
+        example: traffic-management
+    spec:
+      containers:
+      - name: ucp-container
+        image: docker.io/pintulohargcetts/nginx_custom:v1
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 80
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ucp-svc
+  labels:
+    app: myapp-ucp2
+    version: v1
+    example: traffic-management 
+spec:
+  type: ClusterIP # Not using node port . will be accessing from clusture . 
+  ports:
+  - port: 8080
+    targetPort: 80
+  selector:
+    app: myapp-ucp # select those pods whose labels are  app: myapp-ucp version: v1 example: traffic-management
+    version: v1
+    example: traffic-management

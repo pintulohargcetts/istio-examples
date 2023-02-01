@@ -1,0 +1,15 @@
+# The example below declares a global default Sidecar configuration in the root namespace
+# called istio-config, that configures sidecars in all namespaces 
+# to allow egress traffic only to other workloads in the same namespace as well 
+# as to services in the istio-system namespace.
+
+apiVersion: networking.istio.io/v1beta1
+kind: Sidecar
+metadata:
+  name: default
+  namespace: istio-config
+spec:
+  egress:
+  - hosts:
+    - "./*"
+    - "istio-system/*"

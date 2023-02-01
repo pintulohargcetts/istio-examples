@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: vs-splitter-seceda-ucp-microsvc
+spec:
+  hosts:
+    - ucp-svc
+  http:
+  - name: virtual-service-routes
+    route: 
+    - destination: 
+        host: ucp-svc # Send here 
+        subset: ucp-service-subset 
+      weight: 50
+      timeout: 10s # Set timeout that envoy proxy should wait 
+    - destination: 
+        host: ucp2-svc # Send here 
+        subset: ucp2-service-subset 
+      weight: 50

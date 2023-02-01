@@ -1,0 +1,69 @@
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: my-istio-gw-ob-demo
+spec:
+  selector:
+    istio: ingressgateway # Use the in-buil ingres gateway pod 
+    app: istio-ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http   
+      protocol: HTTP # or TCP
+    hosts:
+    - "*"    
+    #- "ucp.devinfradevauth.com" 
+
+# This virtual service controll inside service mesh if any pod access through the ucp-svc
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: vs-ingress-ab
+spec:
+  hosts:
+    - "*"
+  gateways:
+    -  my-istio-gw-ob-demo
+  http:
+  - match:
+    - uri:
+        prefix: /index/
+    rewrite:
+      uri: "/"  
+    name: vs-ingress-ab-policy1    
+    route: 
+    - destination: 
+        host: ucp-svc-ab # Send here 
+        subset: v1
+      weight: 10
+    - destination: 
+        host: ucp-svc-ab # Send here 
+        subset: v2
+      weight: 90 
+---
+#Destination rule.
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata: 
+  name: istio-destination-rule-ab
+spec: 
+  host: ucp-svc-ab # Just copy the host part from Virtual service and further define the traffic rule.
+  subsets: 
+  - name: v1
+    labels: # Used for selecting the pods
+      app: myapp-ucp-ab # use same existing  feature pods 
+      version: v1
+    trafficPolicy: 
+      loadBalancer: 
+        simple: ROUND_ROBIN
+  - name: v2
+    labels:
+      app: myapp-ucp-ab
+      version: v2
+    trafficPolicy: 
+      loadBalancer: 
+        simple: ROUND_ROBIN
+      
+
